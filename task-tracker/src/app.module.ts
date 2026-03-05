@@ -7,6 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { GetMailerConfig } from './configs/mailer.config';
 import { CacheModule } from './modules/cache/cache.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { CacheModule } from './modules/cache/cache.module';
       useFactory: GetMailerConfig,
     }),
     CacheModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

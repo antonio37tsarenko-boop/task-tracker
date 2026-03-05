@@ -21,4 +21,14 @@ export class CacheService {
     typeof value == 'object' ? (value = JSON.stringify(value)) : true;
     await this.redis.set(key, value, 'EX', 600);
   }
+
+  async setIfNotExists(
+    key: string,
+    value: string | number | object,
+    ttlSeconds = 600,
+  ): Promise<boolean> {
+    typeof value == 'object' ? (value = JSON.stringify(value)) : true;
+    const result = await this.redis.set(key, value, 'EX', ttlSeconds, 'NX');
+    return result === 'OK';
+  }
 }
