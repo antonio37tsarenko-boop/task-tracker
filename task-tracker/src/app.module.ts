@@ -6,6 +6,7 @@ import { PrismaModule } from './modules/prisma/prisma.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { GetMailerConfig } from './configs/mailer.config';
+import { CacheModule } from './modules/cache/cache.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { GetMailerConfig } from './configs/mailer.config';
       inject: [ConfigService],
       useFactory: GetMailerConfig,
     }),
+    CacheModule,
   ],
   controllers: [AppController],
   providers: [AppService],
