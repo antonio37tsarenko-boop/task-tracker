@@ -9,9 +9,11 @@ import { HashModule } from '../hash/hash.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { getJwtConfig } from '../../configs/jwt.config';
+import { PassportModule } from '@nestjs/passport';
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
-  providers: [AuthService],
+  providers: [AuthService, JwtStrategy],
   imports: [
     PrismaModule,
     CacheModule,
@@ -23,6 +25,7 @@ import { getJwtConfig } from '../../configs/jwt.config';
       inject: [ConfigService],
       useFactory: getJwtConfig,
     }),
+    PassportModule.registerAsync({}),
   ],
   controllers: [AuthController],
 })
