@@ -1,4 +1,4 @@
-import { UserRoles } from '../enums/user-roles.enum';
+import { UserRoles } from '@prisma/client';
 
 export class IJwtPayload {
   id: string;

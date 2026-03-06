@@ -24,6 +24,7 @@ import { HashService } from '../hash/hash.service';
 import { USER_EXISTS_ERROR } from '../../common/constants';
 import { JwtService } from '@nestjs/jwt';
 import { IJwtPayload } from '../../common/interfaces/jwt-payload.interface';
+import { UserRoles } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -96,6 +97,7 @@ export class AuthService {
       email: cacheData.email,
       hashedPassword: cacheData.hashedPassword,
       name: cacheData.name,
+      role: UserRoles.USER,
     });
 
     const payload: IJwtPayload = {
