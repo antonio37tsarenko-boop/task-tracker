@@ -21,9 +21,9 @@ export class CacheService {
     return this.redis.get(key);
   }
 
-  async set(key: string, value: string | number | object) {
+  async set(key: string, value: string | number | object, ttlSeconds = 600) {
     typeof value == 'object' ? (value = JSON.stringify(value)) : true;
-    await this.redis.set(key, value, 'EX', 600);
+    await this.redis.set(key, value, 'EX', ttlSeconds);
   }
 
   async setIfNotExists(

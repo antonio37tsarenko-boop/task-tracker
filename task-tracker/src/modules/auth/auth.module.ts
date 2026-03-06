@@ -15,7 +15,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 @Module({
   providers: [AuthService, JwtStrategy],
   imports: [
-    PrismaModule,
     CacheModule,
     MailerModule,
     UsersModule,

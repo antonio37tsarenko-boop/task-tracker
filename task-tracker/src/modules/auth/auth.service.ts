@@ -3,8 +3,9 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  Res,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { MailerService } from '@nestjs-modules/mailer';
 import { RegisterDto } from './dto/register.dto';
@@ -16,6 +17,7 @@ import {
   OTP_NOT_REQUESTED_ERROR,
   OTP_SENT_ERROR,
   WRONG_OTP_ERROR,
+  WRONG_PASSWORD_ERROR,
 } from './auth.constants';
 import { VerifyDto } from './dto/verify.dto';
 import { UsersService } from '../users/users.service';
@@ -26,22 +28,22 @@ import { JwtService } from '@nestjs/jwt';
 import { IJwtPayload } from '../../common/interfaces/jwt-payload.interface';
 import { UserRoles } from '@prisma/client';
 import { LoginDto } from './dto/login.dto';
+import { ConfigService } from '@nestjs/config';
+import e from 'express';
 
 @Injectable()
 export class AuthService {
   logger: Logger = new Logger('AuthService');
   constructor(
-    private readonly prisma: PrismaService,
     private readonly cacheService: CacheService,
     private readonly mailService: MailerService,
     private readonly usersService: UsersService,
     private readonly hashService: HashService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
   async register({ email, name, password }: RegisterDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await this.usersService.find(email);
     if (user) {
       throw new BadRequestException(USER_EXISTS_ERROR);
     }
@@ -76,10 +78,10 @@ export class AuthService {
     };
   }
 
-  async verify({ email, otp }: VerifyDto) {
-    console.log('________DEV________-');
-    await this.jwtService.signAsync({ email });
-    console.log('________DEV________-');
+  async verify(
+    { email, otp }: VerifyDto,
+    @Res({ passthrough: true }) res: e.Response,
+  ) {
     const cacheData =
       await this.cacheService.getParseAndDelete<IRegisterCacheData>(
         `registration:${email.toLowerCase().trim()}`,
@@ -94,7 +96,7 @@ export class AuthService {
       throw new BadRequestException(WRONG_OTP_ERROR);
     }
 
-    const { id } = await this.usersService.createOrThrow({
+    const user = await this.usersService.createOrThrow({
       email: cacheData.email,
       hashedPassword: cacheData.hashedPassword,
       name: cacheData.name,
@@ -102,14 +104,59 @@ export class AuthService {
     });
 
     const payload: IJwtPayload = {
-      id,
+      id: user.id,
       email,
     };
+    const { access_token, refresh_token } = await this.getTokens(payload);
+    await this.cacheService.set(
+      `refresh:${user.id}`,
+      await this.hashService.hash(refresh_token),
+      7 * 24 * 60 * 60,
+    );
+
+    res.cookie('refresh_token', refresh_token, {
+      httpOnly: true,
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     return {
-      access_token: await this.jwtService.signAsync(payload),
+      user: {
+        email: user.email,
+        id: user.id,
+        name: user.name,
+      },
+      access_token,
+      status: ResStatuses.DONE,
     };
   }
 
-  async login(data: LoginDto) {}
+  async login(data: LoginDto) {
+    const user = await this.usersService.findOrThrow(data.email);
+    const isCorrectPassword = await this.hashService.compare(
+      data.password,
+      user.hashedPassword,
+    );
+    if (!isCorrectPassword) {
+      throw new UnauthorizedException(WRONG_PASSWORD_ERROR);
+    }
+  }
+
+  async getTokens(payload: IJwtPayload) {
+    const access_token = await this.jwtService.signAsync(payload, {
+      secret: this.configService.getOrThrow('JWT_ACCESS_SECRET'),
+      expiresIn: '15m',
+    });
+    const refresh_token = await this.jwtService.signAsync(
+      { id: payload.id },
+      {
+        secret: this.configService.getOrThrow('JWT_REFRESH_SECRET'),
+        expiresIn: '7d',
+      },
+    );
+    return {
+      access_token,
+      refresh_token,
+    };
+  }
 }
