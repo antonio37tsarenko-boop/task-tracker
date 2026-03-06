@@ -25,6 +25,7 @@ import { USER_EXISTS_ERROR } from '../../common/constants';
 import { JwtService } from '@nestjs/jwt';
 import { IJwtPayload } from '../../common/interfaces/jwt-payload.interface';
 import { UserRoles } from '@prisma/client';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
@@ -110,5 +111,5 @@ export class AuthService {
     };
   }
 
-  async login() {}
+  async login(data: LoginDto) {}
 }

@@ -1,7 +1,14 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, User } from '@prisma/client';
-import { USER_EXISTS_ERROR } from '../../common/constants';
+import {
+  USER_EXISTS_ERROR,
+  USER_NOT_EXISTS_ERROR,
+} from '../../common/constants';
 
 @Injectable()
 export class UsersService {
@@ -43,5 +50,21 @@ export class UsersService {
       }
       throw e;
     }
+  }
+
+  find(email: string) {
+    return this.prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+  }
+
+  async findOrThrow(email: string) {
+    const user = await this.find(email);
+    if (!user) {
+      throw new BadRequestException(USER_NOT_EXISTS_ERROR);
+    }
+    return user;
   }
 }
