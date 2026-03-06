@@ -18,13 +18,19 @@ enum TaskStatuses {
   NOT_COMPLETED
 }
 
+enum UserRoles {
+  USER
+  ADMIN
+}
+
 model User {
-  id             String   @id() @default(uuid())
-  name           String   @default("User")
-  email          String   @unique()
+  id             String    @id() @default(uuid())
+  name           String    @default("User")
+  email          String    @unique()
   hashedPassword String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt()
+  role           UserRoles @default(USER)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt()
 
   @@map("users")
 }
