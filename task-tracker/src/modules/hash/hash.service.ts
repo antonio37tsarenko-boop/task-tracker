@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import bcrypt from 'bcrypt';
+import { hash, compare } from 'bcrypt';
 
 @Injectable()
 export class HashService {
   hash(password: string) {
-    return bcrypt.hash(password, 10);
+    return hash(password, 10);
   }
 
   compare(data: string, hash: string) {
-    return bcrypt.compare(data, hash);
+    return compare(data, hash);
   }
 }

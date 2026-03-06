@@ -17,5 +17,6 @@ import Redis from 'ioredis';
       },
     },
   ],
+  exports: [CacheService],
 })
 export class CacheModule {}

@@ -8,6 +8,9 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { GetMailerConfig } from './configs/mailer.config';
 import { CacheModule } from './modules/cache/cache.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { HashModule } from './modules/hash/hash.module';
+import { JwtModule } from '@nestjs/jwt';
+import { getJwtConfig } from './configs/jwt.config';
 
 @Module({
   imports: [
@@ -23,6 +26,7 @@ import { AuthModule } from './modules/auth/auth.module';
     }),
     CacheModule,
     AuthModule,
+    HashModule,
   ],
   controllers: [AppController],
   providers: [AppService],
