@@ -3,5 +3,5 @@ import { UserRoles } from '@prisma/client';
 export class IJwtPayload {
   id: string;
   email: string;
-  role?: UserRoles = UserRoles.USER;
+  role?: UserRoles | null = UserRoles.USER;
 }

@@ -26,7 +26,7 @@ import { HashService } from '../hash/hash.service';
 import { USER_EXISTS_ERROR } from '../../common/constants';
 import { JwtService } from '@nestjs/jwt';
 import { IJwtPayload } from '../../common/interfaces/jwt-payload.interface';
-import { UserRoles } from '@prisma/client';
+import { User, UserRoles } from '@prisma/client';
 import { LoginDto } from './dto/login.dto';
 import { ConfigService } from '@nestjs/config';
 import e from 'express';
@@ -78,10 +78,7 @@ export class AuthService {
     };
   }
 
-  async verify(
-    { email, otp }: VerifyDto,
-    @Res({ passthrough: true }) res: e.Response,
-  ) {
+  async verify({ email, otp }: VerifyDto, res: e.Response) {
     const cacheData =
       await this.cacheService.getParseAndDelete<IRegisterCacheData>(
         `registration:${email.toLowerCase().trim()}`,
@@ -107,18 +104,7 @@ export class AuthService {
       id: user.id,
       email,
     };
-    const { access_token, refresh_token } = await this.getTokens(payload);
-    await this.cacheService.set(
-      `refresh:${user.id}`,
-      await this.hashService.hash(refresh_token),
-      7 * 24 * 60 * 60,
-    );
-
-    res.cookie('refresh_token', refresh_token, {
-      httpOnly: true,
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    const access_token = await this.handleTokens(payload, user, res);
 
     return {
       user: {
@@ -131,7 +117,7 @@ export class AuthService {
     };
   }
 
-  async login(data: LoginDto) {
+  async login(data: LoginDto, res: e.Response) {
     const user = await this.usersService.findOrThrow(data.email);
     const isCorrectPassword = await this.hashService.compare(
       data.password,
@@ -140,9 +126,25 @@ export class AuthService {
     if (!isCorrectPassword) {
       throw new UnauthorizedException(WRONG_PASSWORD_ERROR);
     }
+    const payload: IJwtPayload = {
+      email: user.email,
+      id: user.id,
+      role: user.role,
+    };
+    const access_token = await this.handleTokens(payload, user, res);
+
+    return {
+      user: {
+        email: user.email,
+        id: user.id,
+        name: user.name,
+      },
+      access_token,
+      status: ResStatuses.DONE,
+    };
   }
 
-  async getTokens(payload: IJwtPayload) {
+  private async getTokens(payload: IJwtPayload) {
     const access_token = await this.jwtService.signAsync(payload, {
       secret: this.configService.getOrThrow('JWT_ACCESS_SECRET'),
       expiresIn: '15m',
@@ -158,5 +160,26 @@ export class AuthService {
       access_token,
       refresh_token,
     };
+  }
+
+  private async handleTokens(
+    payload: IJwtPayload,
+    user: User,
+    res: e.Response,
+  ) {
+    const { access_token, refresh_token } = await this.getTokens(payload);
+    await this.cacheService.set(
+      `refresh:${user.id}`,
+      await this.hashService.hash(refresh_token),
+      7 * 24 * 60 * 60,
+    );
+
+    res.cookie('refresh_token', refresh_token, {
+      httpOnly: true,
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return access_token;
   }
 }

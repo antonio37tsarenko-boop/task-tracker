@@ -8,7 +8,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 @Module({
   controllers: [UsersController],
   providers: [UsersService],
-  imports: [PrismaModule, MailerModule],
+  imports: [PrismaModule],
   exports: [UsersService],
 })
 export class UsersModule {}
