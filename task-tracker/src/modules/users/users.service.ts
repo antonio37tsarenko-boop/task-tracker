@@ -104,4 +104,10 @@ export class UsersService {
     }
     return user;
   }
+
+  async getUser(id: string) {
+    const { hashedPassword, updatedAt, ...safeUser } =
+      await this.findByIdOrThrow(id);
+    return { ...safeUser };
+  }
 }
