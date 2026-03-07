@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, User } from '@prisma/client';
@@ -12,19 +13,27 @@ import {
 
 @Injectable()
 export class UsersService {
+  logger: Logger = new Logger('UsersService');
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) {
-    return this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data,
     });
+    this.logger.log(`User ${user.id} is created.`);
+
+    return user;
   }
 
   async delete(id: string): Promise<boolean> {
     const { count } = await this.prisma.user.deleteMany({
       where: { id },
     });
-    return count > 0;
+    const result = count > 0;
+    if (result) {
+      this.logger.log(`User ${id} is deleted/`);
+    }
+    return result;
   }
 
   async changeProperty<
@@ -36,7 +45,19 @@ export class UsersService {
         [property]: value,
       },
     });
-    return count > 0;
+    const result = count > 0;
+    if (result) {
+      let value2: string = value || '';
+      property == 'hashedPassword'
+        ? (value2 = 'PRIVATE DATA')
+        : property == 'email'
+          ? (value2 = 'PRIVATE DATA')
+          : true;
+      this.logger.log(
+        `Property ${property} of user ${id} is changed to ${value}.`,
+      );
+    }
+    return result;
   }
 
   createOrThrow(data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) {

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Post,
   Req,
@@ -15,6 +16,7 @@ import { LoginDto } from './dto/login.dto';
 import { JwtRefreshGuard } from '../../guards/jwt-refresh.guard';
 import { IJwtPayload } from '../../common/interfaces/jwt-payload.interface';
 import { User } from '../../decorators/user.decorator';
+import { JwtAuthGuard } from '../../guards/jwt.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -50,5 +52,14 @@ export class AuthController {
   ) {
     const refresh = req.cookies.refresh_token;
     return this.authService.refresh(user.id, refresh, res);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('logout')
+  async logout(
+    @User() user: IJwtPayload,
+    @Res({ passthrough: true }) res: e.Response,
+  ) {
+    return this.authService.logout(user.id, res);
   }
 }

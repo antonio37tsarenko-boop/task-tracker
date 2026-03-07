@@ -3,9 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
-  Res,
   UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
 import { CacheService } from '../cache/cache.service';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -31,7 +29,6 @@ import { User, UserRoles } from '@prisma/client';
 import { LoginDto } from './dto/login.dto';
 import { ConfigService } from '@nestjs/config';
 import e from 'express';
-import { JwtRefreshGuard } from '../../guards/jwt-refresh.guard';
 
 @Injectable()
 export class AuthService {
@@ -62,14 +59,14 @@ export class AuthService {
       throw new BadRequestException(OTP_SENT_ERROR);
     }
 
-    this.logger.log(`Otp is saved in cache for user ${email}.`);
+    this.logger.log(`Otp is saved in cache for potential user ${email}.`);
 
     await this.mailService.sendMail({
       to: email,
       text: getOtpText(otp),
     });
 
-    this.logger.log(`Otp is sent for user ${email}.`);
+    this.logger.log(`Otp is sent for potential user ${email}.`);
 
     return {
       user: {
@@ -215,6 +212,18 @@ export class AuthService {
         role: user.role,
       },
       access_token,
+      status: ResStatuses.DONE,
+    };
+  }
+
+  async logout(userId: string, res: e.Response) {
+    await this.cacheService.delete(`refresh:${userId}`);
+    res.clearCookie('refresh_token', {
+      httpOnly: true,
+      sameSite: 'strict',
+    });
+
+    return {
       status: ResStatuses.DONE,
     };
   }

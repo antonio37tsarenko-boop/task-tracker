@@ -36,8 +36,8 @@ export class CacheService {
     return result === 'OK';
   }
 
-  delete(key: string): boolean {
-    return Boolean(this.redis.del(key));
+  async delete(key: string): Promise<boolean> {
+    return Boolean(await this.redis.del(key));
   }
 
   async getAndDelete(key: string) {
