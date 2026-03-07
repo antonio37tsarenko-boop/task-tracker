@@ -52,7 +52,7 @@ export class UsersService {
     }
   }
 
-  find(email: string) {
+  findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: {
         email,
@@ -60,8 +60,24 @@ export class UsersService {
     });
   }
 
-  async findOrThrow(email: string) {
-    const user = await this.find(email);
+  async findByEmailOrThrow(email: string) {
+    const user = await this.findByEmail(email);
+    if (!user) {
+      throw new BadRequestException(USER_NOT_EXISTS_ERROR);
+    }
+    return user;
+  }
+
+  findById(id: string) {
+    return this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
+  async findByIdOrThrow(id: string) {
+    const user = await this.findById(id);
     if (!user) {
       throw new BadRequestException(USER_NOT_EXISTS_ERROR);
     }

@@ -1,6 +1,7 @@
 import { createParamDecorator } from '@nestjs/common';
+import { IJwtPayload } from '../common/interfaces/jwt-payload.interface';
 
-const User = createParamDecorator((data: unknown, ctx) => {
+export const User = createParamDecorator((data: unknown, ctx) => {
   const request = ctx.switchToHttp().getRequest();
-  return request.user;
+  return request.user as IJwtPayload;
 });

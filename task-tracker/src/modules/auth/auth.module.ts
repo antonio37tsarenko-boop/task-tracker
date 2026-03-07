@@ -10,9 +10,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { getJwtConfig } from '../../configs/jwt.config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 
 @Module({
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, JwtRefreshStrategy],
   imports: [
     CacheModule,
     MailerModule,

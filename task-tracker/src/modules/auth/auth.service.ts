@@ -5,6 +5,7 @@ import {
   Logger,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { CacheService } from '../cache/cache.service';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -30,6 +31,7 @@ import { User, UserRoles } from '@prisma/client';
 import { LoginDto } from './dto/login.dto';
 import { ConfigService } from '@nestjs/config';
 import e from 'express';
+import { JwtRefreshGuard } from '../../guards/jwt-refresh.guard';
 
 @Injectable()
 export class AuthService {
@@ -43,7 +45,7 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
   async register({ email, name, password }: RegisterDto) {
-    const user = await this.usersService.find(email);
+    const user = await this.usersService.findByEmail(email);
     if (user) {
       throw new BadRequestException(USER_EXISTS_ERROR);
     }
@@ -118,7 +120,7 @@ export class AuthService {
   }
 
   async login(data: LoginDto, res: e.Response) {
-    const user = await this.usersService.findOrThrow(data.email);
+    const user = await this.usersService.findByEmailOrThrow(data.email);
     const isCorrectPassword = await this.hashService.compare(
       data.password,
       user.hashedPassword,
@@ -138,6 +140,7 @@ export class AuthService {
         email: user.email,
         id: user.id,
         name: user.name,
+        role: user.role,
       },
       access_token,
       status: ResStatuses.DONE,
@@ -181,5 +184,38 @@ export class AuthService {
     });
 
     return access_token;
+  }
+
+  async refresh(userId: string, refresh: string, res: e.Response) {
+    const correctRefresh = await this.cacheService.get(`refresh:${userId}`);
+    if (!correctRefresh) {
+      throw new UnauthorizedException();
+    }
+    const user = await this.usersService.findByIdOrThrow(userId);
+
+    const isCorrectRefresh = await this.hashService.compare(
+      refresh,
+      correctRefresh,
+    );
+    if (!isCorrectRefresh) {
+      throw new UnauthorizedException();
+    }
+    const payload: IJwtPayload = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    };
+    const access_token = await this.handleTokens(payload, user, res);
+
+    return {
+      user: {
+        email: user.email,
+        id: user.id,
+        name: user.name,
+        role: user.role,
+      },
+      access_token,
+      status: ResStatuses.DONE,
+    };
   }
 }
