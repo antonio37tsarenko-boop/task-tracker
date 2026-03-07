@@ -10,6 +10,8 @@ import {
   USER_EXISTS_ERROR,
   USER_NOT_EXISTS_ERROR,
 } from '../../common/constants';
+import { GetAllUsersDto } from './dto/get-all-users.dto';
+import { ResStatuses } from '../../common/enums/res-status.enum';
 
 @Injectable()
 export class UsersService {
@@ -109,5 +111,28 @@ export class UsersService {
     const { hashedPassword, updatedAt, ...safeUser } =
       await this.findByIdOrThrow(id);
     return { ...safeUser };
+  }
+
+  async getAllUsers({ skip, take }: GetAllUsersDto, id: string) {
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.user.count(),
+    ]);
+
+    return {
+      status: ResStatuses.DONE,
+      users,
+      total,
+    };
   }
 }
