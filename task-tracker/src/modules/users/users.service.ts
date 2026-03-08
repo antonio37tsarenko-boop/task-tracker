@@ -14,6 +14,8 @@ import { GetAllUsersDto } from './dto/get-all-users.dto';
 import { ResStatuses } from '../../common/enums/res-status.enum';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { getSafeUser } from '../../utils/get-safe-user.util';
+import { BanDto } from './dto/ban.dto';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class UsersService {
@@ -182,5 +184,24 @@ export class UsersService {
       }
       throw e;
     }
+  }
+
+  async ban(dto: BanDto, userId: string) {
+    const user = await this.findByIdOrThrow(userId);
+    let unbanDate = dayjs();
+
+    if (dto.years) unbanDate = unbanDate.add(dto.years, 'year');
+    if (dto.months) unbanDate = unbanDate.add(dto.months, 'month');
+    if (dto.days) unbanDate = unbanDate.add(dto.days, 'day');
+    if (dto.hours) unbanDate = unbanDate.add(dto.hours, 'hour');
+    if (dto.minutes) unbanDate = unbanDate.add(dto.minutes, 'minute');
+
+    const finalDate = unbanDate.toDate();
+    await this.changeProperty(userId, 'unbanDate', finalDate);
+
+    return {
+      status: ResStatuses.DONE,
+      user: getSafeUser(user),
+    };
   }
 }
