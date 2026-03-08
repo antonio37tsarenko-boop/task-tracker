@@ -22,31 +22,28 @@ import { UpdateMeDto } from './dto/update-me.dto';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Get('me')
   async getMe(@User() user: IJwtPayload) {
     return this.usersService.getMe(user.id);
   }
 
-  @UseGuards(JwtAuthGuard, AdminGuard)
+  @UseGuards(AdminGuard)
   @Get()
   async getAllUsers(@Query() dto: GetAllUsersDto, @User() user: IJwtPayload) {
     return this.usersService.getAllUsers(dto, user.id);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Delete('me')
   async deleteMe(@User() user: IJwtPayload) {
     return this.usersService.deleteMe(user.id);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Patch('me')
   async updateMe(@Body() dto: UpdateMeDto, @User() user: IJwtPayload) {
     return this.usersService.updateMe(dto, user.id);
   }
 
-  @UseGuards(JwtAuthGuard, AdminGuard)
+  @UseGuards(AdminGuard)
   @Patch(':id/role')
   async changeRole(
     @Param('id') id: string,

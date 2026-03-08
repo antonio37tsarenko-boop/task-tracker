@@ -22,26 +22,31 @@ import { JwtAuthGuard } from '../../guards/jwt.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { Public } from '../../decorators/public.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
+  @Public()
   @Post('verify')
   verify(@Body() dto: VerifyDto, @Res({ passthrough: true }) res: e.Response) {
     return this.authService.verify(dto, res);
   }
 
+  @Public()
   @Post('login')
   login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: e.Response) {
     return this.authService.login(dto, res);
   }
 
+  @Public()
   @UseGuards(JwtRefreshGuard)
   @Get('refresh')
   refresh(
@@ -53,7 +58,6 @@ export class AuthController {
     return this.authService.refresh(user.id, refresh, res);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Delete('logout')
   logout(
     @User() user: IJwtPayload,
@@ -62,22 +66,24 @@ export class AuthController {
     return this.authService.logout(user.id, res);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Patch('password')
   changePassword(@Body() dto: ChangePasswordDto, @User() user: IJwtPayload) {
     return this.authService.changePassword(dto, user.id);
   }
 
+  @Public()
   @Get('password/forgot')
   forgotPassword(@Query() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
   }
 
+  @Public()
   @Patch('password/verify')
   verifyForReset(@Body() dto: VerifyDto) {
     return this.authService.verifyForReset(dto);
   }
 
+  @Public()
   @Patch('password/reset')
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);

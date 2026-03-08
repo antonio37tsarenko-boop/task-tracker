@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -21,7 +20,12 @@ export class UsersService {
   logger: Logger = new Logger('UsersService');
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) {
+  async create(
+    data: Omit<
+      User,
+      'id' | 'createdAt' | 'updatedAt' | 'isBanned' | 'unbanDate'
+    >,
+  ) {
     const user = await this.prisma.user.create({
       data,
     });
@@ -58,22 +62,17 @@ export class UsersService {
         [property]: value,
       },
     });
-    const result = count > 0;
-    if (result) {
-      let value2: string = value || '';
-      property == 'hashedPassword'
-        ? (value2 = 'PRIVATE DATA')
-        : property == 'email'
-          ? (value2 = 'PRIVATE DATA')
-          : true;
-      this.logger.log(
-        `Property ${property} of user ${id} is changed to ${value2}.`,
-      );
-    }
-    return result;
+    this.logger.log(`Property ${property} of user ${id} is changed.`);
+
+    return count > 0;
   }
 
-  createOrThrow(data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) {
+  createOrThrow(
+    data: Omit<
+      User,
+      'id' | 'createdAt' | 'updatedAt' | 'isBanned' | 'unbanDate'
+    >,
+  ) {
     try {
       return this.create(data);
     } catch (e) {

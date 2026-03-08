@@ -31,7 +31,6 @@ model User {
   role           UserRoles? @default(USER)
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt()
-  isBanned       Boolean    @default(false)
   unbanDate      DateTime?
 
   @@map("users")

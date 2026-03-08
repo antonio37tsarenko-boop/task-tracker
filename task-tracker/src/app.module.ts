@@ -11,6 +11,9 @@ import { AuthModule } from './modules/auth/auth.module';
 import { HashModule } from './modules/hash/hash.module';
 import { JwtModule } from '@nestjs/jwt';
 import { getJwtConfig } from './configs/jwt.config';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './guards/jwt.guard';
+import { IsBannedGuard } from './guards/is-banned.guard';
 
 @Module({
   imports: [
@@ -29,6 +32,16 @@ import { getJwtConfig } from './configs/jwt.config';
     HashModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: IsBannedGuard,
+    },
+    AppService,
+  ],
 })
 export class AppModule {}
