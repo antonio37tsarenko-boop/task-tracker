@@ -311,4 +311,29 @@ export class AuthService {
       reset_token,
     };
   }
+
+  async resetPassword({ reset_token, newPassword, email }: ResetPasswordDto) {
+    const correctResetToken = await this.cacheService.getAndDelete(
+      `reset_token:${email}`,
+    );
+    if (!correctResetToken) {
+      throw new BadRequestException(RESET_TOKEN_NOT_REQUESTED_ERROR);
+    }
+
+    if (!(await this.hashService.compare(reset_token, correctResetToken))) {
+      throw new UnauthorizedException(WRONG_RESET_TOKEN_ERROR);
+    }
+
+    const user = await this.usersService.findByEmailOrThrow(email);
+    await this.usersService.changeProperty(
+      user.id,
+      'hashedPassword',
+      await this.hashService.hash(newPassword),
+    );
+
+    return {
+      status: ResStatuses.DONE,
+      user: getSafeUser(user),
+    };
+  }
 }

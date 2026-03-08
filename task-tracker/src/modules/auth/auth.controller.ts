@@ -77,4 +77,9 @@ export class AuthController {
   verifyForReset(@Body() dto: VerifyDto) {
     return this.authService.verifyForReset(dto);
   }
+
+  @Patch('password/reset')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
 }
