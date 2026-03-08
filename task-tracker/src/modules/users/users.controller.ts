@@ -23,8 +23,8 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  async getUser(@User() user: IJwtPayload) {
-    return this.usersService.getUser(user.id);
+  async getMe(@User() user: IJwtPayload) {
+    return this.usersService.getMe(user.id);
   }
 
   @UseGuards(JwtAuthGuard, AdminGuard)

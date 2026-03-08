@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Patch,
   Post,
   Req,
   Res,
@@ -17,6 +18,7 @@ import { JwtRefreshGuard } from '../../guards/jwt-refresh.guard';
 import { IJwtPayload } from '../../common/interfaces/jwt-payload.interface';
 import { User } from '../../decorators/user.decorator';
 import { JwtAuthGuard } from '../../guards/jwt.guard';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -61,5 +63,14 @@ export class AuthController {
     @Res({ passthrough: true }) res: e.Response,
   ) {
     return this.authService.logout(user.id, res);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('password')
+  async changePassword(
+    @Body() dto: ChangePasswordDto,
+    @User() user: IJwtPayload,
+  ) {
+    return this.authService.changePassword(dto, user.id);
   }
 }

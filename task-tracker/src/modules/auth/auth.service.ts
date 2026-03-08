@@ -15,6 +15,7 @@ import {
   getOtpText,
   OTP_NOT_REQUESTED_ERROR,
   OTP_SENT_ERROR,
+  SAME_PASSWORD_ERROR,
   WRONG_OTP_ERROR,
   WRONG_PASSWORD_ERROR,
 } from './auth.constants';
@@ -22,13 +23,17 @@ import { VerifyDto } from './dto/verify.dto';
 import { UsersService } from '../users/users.service';
 import { IRegisterCacheData } from './interfaces/register-cache-data.interface';
 import { HashService } from '../hash/hash.service';
-import { USER_EXISTS_ERROR } from '../../common/constants';
+import {
+  USER_EXISTS_ERROR,
+  USER_NOT_EXISTS_ERROR,
+} from '../../common/constants';
 import { JwtService } from '@nestjs/jwt';
 import { IJwtPayload } from '../../common/interfaces/jwt-payload.interface';
 import { User, UserRoles } from '@prisma/client';
 import { LoginDto } from './dto/login.dto';
 import { ConfigService } from '@nestjs/config';
 import e from 'express';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -224,6 +229,40 @@ export class AuthService {
     });
 
     return {
+      status: ResStatuses.DONE,
+    };
+  }
+
+  async changePassword(
+    { oldPassword, newPassword }: ChangePasswordDto,
+    id: string,
+  ) {
+    const { hashedPassword, email, role, name } =
+      await this.usersService.findByIdOrThrow(id);
+    const isCorrectPassword = await this.hashService.compare(
+      oldPassword,
+      hashedPassword,
+    );
+    if (!isCorrectPassword) {
+      throw new UnauthorizedException(WRONG_PASSWORD_ERROR);
+    }
+    const newHashedPassword = await this.hashService.hash(newPassword);
+    const result = await this.usersService.changeProperty(
+      id,
+      'hashedPassword',
+      newHashedPassword,
+    );
+    if (!result) {
+      throw new BadRequestException(USER_NOT_EXISTS_ERROR);
+    }
+
+    return {
+      user: {
+        id,
+        email: email,
+        name: name,
+        role: role,
+      },
       status: ResStatuses.DONE,
     };
   }
