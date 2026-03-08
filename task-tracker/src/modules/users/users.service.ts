@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma, User } from '@prisma/client';
+import { Prisma, User, UserRoles } from '@prisma/client';
 import {
   USER_EXISTS_ERROR,
   USER_NOT_EXISTS_ERROR,
@@ -33,9 +33,17 @@ export class UsersService {
     });
     const result = count > 0;
     if (result) {
-      this.logger.log(`User ${id} is deleted/`);
+      this.logger.log(`User ${id} is deleted.`);
     }
     return result;
+  }
+
+  async deleteOrThrow(id: string) {
+    const result = await this.delete(id);
+    if (!result) {
+      throw new BadRequestException(USER_NOT_EXISTS_ERROR);
+    }
+    return true;
   }
 
   async changeProperty<
@@ -56,7 +64,7 @@ export class UsersService {
           ? (value2 = 'PRIVATE DATA')
           : true;
       this.logger.log(
-        `Property ${property} of user ${id} is changed to ${value}.`,
+        `Property ${property} of user ${id} is changed to ${value2}.`,
       );
     }
     return result;
@@ -133,6 +141,23 @@ export class UsersService {
       status: ResStatuses.DONE,
       users,
       total,
+    };
+  }
+
+  async deleteMe(id: string) {
+    await this.deleteOrThrow(id);
+    return {
+      status: ResStatuses.DONE,
+    };
+  }
+
+  async changeRole(id: string, role: UserRoles) {
+    const isDone = await this.changeProperty(id, 'role', role);
+    if (!isDone) {
+      throw new BadRequestException(USER_NOT_EXISTS_ERROR);
+    }
+    return {
+      status: ResStatuses.DONE,
     };
   }
 }

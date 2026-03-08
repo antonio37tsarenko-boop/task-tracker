@@ -1,10 +1,21 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  Param,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../guards/jwt.guard';
 import { UsersService } from './users.service';
 import { User } from '../../decorators/user.decorator';
 import { IJwtPayload } from '../../common/interfaces/jwt-payload.interface';
 import { AdminGuard } from '../../guards/admin.guard';
 import { GetAllUsersDto } from './dto/get-all-users.dto';
+import { ChangeRoleDto } from './dto/change-role.dto';
 
 @Controller('users')
 export class UsersController {
@@ -20,5 +31,28 @@ export class UsersController {
   @Get()
   async getAllUsers(@Query() dto: GetAllUsersDto, @User() user: IJwtPayload) {
     return this.usersService.getAllUsers(dto, user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('me')
+  async deleteMe(@User() user: IJwtPayload) {
+    return this.usersService.deleteMe(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('me')
+  async updateMe() {}
+
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Patch(':id/role')
+  async changeRole(
+    @Param('id') id: string,
+    @Body() dto: ChangeRoleDto,
+    @User() user: IJwtPayload,
+  ) {
+    if (id == user.id) {
+      throw new ForbiddenException();
+    }
+    return this.usersService.changeRole(id, dto.role);
   }
 }
