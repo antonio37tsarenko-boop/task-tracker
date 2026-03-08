@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, User, UserRoles } from '@prisma/client';
@@ -12,6 +13,8 @@ import {
 } from '../../common/constants';
 import { GetAllUsersDto } from './dto/get-all-users.dto';
 import { ResStatuses } from '../../common/enums/res-status.enum';
+import { UpdateMeDto } from './dto/update-me.dto';
+import { getSafeUser } from '../../utils/get-safe-user.util';
 
 @Injectable()
 export class UsersService {
@@ -41,7 +44,7 @@ export class UsersService {
   async deleteOrThrow(id: string) {
     const result = await this.delete(id);
     if (!result) {
-      throw new BadRequestException(USER_NOT_EXISTS_ERROR);
+      throw new NotFoundException(USER_NOT_EXISTS_ERROR);
     }
     return true;
   }
@@ -94,7 +97,7 @@ export class UsersService {
   async findByEmailOrThrow(email: string) {
     const user = await this.findByEmail(email);
     if (!user) {
-      throw new BadRequestException(USER_NOT_EXISTS_ERROR);
+      throw new NotFoundException(USER_NOT_EXISTS_ERROR);
     }
     return user;
   }
@@ -110,14 +113,13 @@ export class UsersService {
   async findByIdOrThrow(id: string) {
     const user = await this.findById(id);
     if (!user) {
-      throw new BadRequestException(USER_NOT_EXISTS_ERROR);
+      throw new NotFoundException(USER_NOT_EXISTS_ERROR);
     }
     return user;
   }
 
   async getMe(id: string) {
-    const { hashedPassword, updatedAt, ...safeUser } =
-      await this.findByIdOrThrow(id);
+    const safeUser = getSafeUser(await this.findByIdOrThrow(id));
     return { ...safeUser };
   }
 
@@ -154,10 +156,32 @@ export class UsersService {
   async changeRole(id: string, role: UserRoles) {
     const isDone = await this.changeProperty(id, 'role', role);
     if (!isDone) {
-      throw new BadRequestException(USER_NOT_EXISTS_ERROR);
+      throw new NotFoundException(USER_NOT_EXISTS_ERROR);
     }
     return {
       status: ResStatuses.DONE,
     };
+  }
+
+  async updateMe(data: UpdateMeDto, id: string) {
+    try {
+      const user = await this.prisma.user.update({
+        where: {
+          id,
+        },
+        data: data,
+      });
+      return {
+        status: ResStatuses.DONE,
+        user: getSafeUser(user),
+      };
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
+        if (e.code === 'P2025') {
+          throw new NotFoundException(USER_NOT_EXISTS_ERROR);
+        }
+      }
+      throw e;
+    }
   }
 }

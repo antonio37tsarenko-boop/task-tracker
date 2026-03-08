@@ -16,6 +16,7 @@ import { IJwtPayload } from '../../common/interfaces/jwt-payload.interface';
 import { AdminGuard } from '../../guards/admin.guard';
 import { GetAllUsersDto } from './dto/get-all-users.dto';
 import { ChangeRoleDto } from './dto/change-role.dto';
+import { UpdateMeDto } from './dto/update-me.dto';
 
 @Controller('users')
 export class UsersController {
@@ -40,8 +41,10 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete('me')
-  async updateMe() {}
+  @Patch('me')
+  async updateMe(@Body() dto: UpdateMeDto, @User() user: IJwtPayload) {
+    return this.usersService.updateMe(dto, user.id);
+  }
 
   @UseGuards(JwtAuthGuard, AdminGuard)
   @Patch(':id/role')

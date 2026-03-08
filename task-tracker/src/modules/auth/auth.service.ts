@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { CacheService } from '../cache/cache.service';
@@ -15,7 +16,6 @@ import {
   getOtpText,
   OTP_NOT_REQUESTED_ERROR,
   OTP_SENT_ERROR,
-  SAME_PASSWORD_ERROR,
   WRONG_OTP_ERROR,
   WRONG_PASSWORD_ERROR,
 } from './auth.constants';
@@ -34,6 +34,7 @@ import { LoginDto } from './dto/login.dto';
 import { ConfigService } from '@nestjs/config';
 import e from 'express';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { getSafeUser } from '../../utils/get-safe-user.util';
 
 @Injectable()
 export class AuthService {
@@ -111,11 +112,7 @@ export class AuthService {
     const access_token = await this.handleTokens(payload, user, res);
 
     return {
-      user: {
-        email: user.email,
-        id: user.id,
-        name: user.name,
-      },
+      user: getSafeUser(user),
       access_token,
       status: ResStatuses.DONE,
     };
@@ -138,12 +135,7 @@ export class AuthService {
     const access_token = await this.handleTokens(payload, user, res);
 
     return {
-      user: {
-        email: user.email,
-        id: user.id,
-        name: user.name,
-        role: user.role,
-      },
+      user: getSafeUser(user),
       access_token,
       status: ResStatuses.DONE,
     };
@@ -210,12 +202,7 @@ export class AuthService {
     const access_token = await this.handleTokens(payload, user, res);
 
     return {
-      user: {
-        email: user.email,
-        id: user.id,
-        name: user.name,
-        role: user.role,
-      },
+      user: getSafeUser(user),
       access_token,
       status: ResStatuses.DONE,
     };
@@ -237,11 +224,10 @@ export class AuthService {
     { oldPassword, newPassword }: ChangePasswordDto,
     id: string,
   ) {
-    const { hashedPassword, email, role, name } =
-      await this.usersService.findByIdOrThrow(id);
+    const user = await this.usersService.findByIdOrThrow(id);
     const isCorrectPassword = await this.hashService.compare(
       oldPassword,
-      hashedPassword,
+      user.hashedPassword,
     );
     if (!isCorrectPassword) {
       throw new UnauthorizedException(WRONG_PASSWORD_ERROR);
@@ -253,16 +239,11 @@ export class AuthService {
       newHashedPassword,
     );
     if (!result) {
-      throw new BadRequestException(USER_NOT_EXISTS_ERROR);
+      throw new NotFoundException(USER_NOT_EXISTS_ERROR);
     }
 
     return {
-      user: {
-        id,
-        email: email,
-        name: name,
-        role: role,
-      },
+      user: getSafeUser(user),
       status: ResStatuses.DONE,
     };
   }
