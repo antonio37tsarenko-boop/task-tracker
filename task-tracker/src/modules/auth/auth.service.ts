@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -16,8 +17,10 @@ import {
   getOtpText,
   OTP_NOT_REQUESTED_ERROR,
   OTP_SENT_ERROR,
+  RESET_TOKEN_NOT_REQUESTED_ERROR,
   WRONG_OTP_ERROR,
   WRONG_PASSWORD_ERROR,
+  WRONG_RESET_TOKEN_ERROR,
 } from './auth.constants';
 import { VerifyDto } from './dto/verify.dto';
 import { UsersService } from '../users/users.service';
@@ -35,6 +38,9 @@ import { ConfigService } from '@nestjs/config';
 import e from 'express';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { getSafeUser } from '../../utils/get-safe-user.util';
+import { IResetPasswordCacheData } from './interfaces/reset-password-cache-data.interface';
+import { randomUUID } from 'crypto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -244,6 +250,27 @@ export class AuthService {
 
     return {
       user: getSafeUser(user),
+      status: ResStatuses.DONE,
+    };
+  }
+
+  async forgotPassword(email: string) {
+    console.log('FORGOT PASSWORD FUNC IS WORKING');
+    await this.usersService.findByEmailOrThrow(email);
+    console.log('USER IS FOUND');
+    const otp = generateOtp();
+
+    await this.mailService.sendMail({
+      to: email.trim().toLowerCase(),
+      text: getOtpText(otp),
+    });
+    const cacheData: IResetPasswordCacheData = {
+      attemptsCount: 0,
+      otp: await this.hashService.hash(otp),
+    };
+    await this.cacheService.set(`otp-to-reset:${email}`, cacheData);
+
+    return {
       status: ResStatuses.DONE,
     };
   }

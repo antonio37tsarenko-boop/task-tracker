@@ -5,6 +5,7 @@ import {
   Get,
   Patch,
   Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -19,35 +20,31 @@ import { IJwtPayload } from '../../common/interfaces/jwt-payload.interface';
 import { User } from '../../decorators/user.decorator';
 import { JwtAuthGuard } from '../../guards/jwt.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  async register(@Body() dto: RegisterDto) {
+  register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
   @Post('verify')
-  async verify(
-    @Body() dto: VerifyDto,
-    @Res({ passthrough: true }) res: e.Response,
-  ) {
+  verify(@Body() dto: VerifyDto, @Res({ passthrough: true }) res: e.Response) {
     return this.authService.verify(dto, res);
   }
 
   @Post('login')
-  async login(
-    @Body() dto: LoginDto,
-    @Res({ passthrough: true }) res: e.Response,
-  ) {
+  login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: e.Response) {
     return this.authService.login(dto, res);
   }
 
   @UseGuards(JwtRefreshGuard)
   @Get('refresh')
-  async refresh(
+  refresh(
     @Res({ passthrough: true }) res: e.Response,
     @Req() req: e.Request,
     @User() user: IJwtPayload,
@@ -58,7 +55,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Delete('logout')
-  async logout(
+  logout(
     @User() user: IJwtPayload,
     @Res({ passthrough: true }) res: e.Response,
   ) {
@@ -67,10 +64,12 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('password')
-  async changePassword(
-    @Body() dto: ChangePasswordDto,
-    @User() user: IJwtPayload,
-  ) {
+  changePassword(@Body() dto: ChangePasswordDto, @User() user: IJwtPayload) {
     return this.authService.changePassword(dto, user.id);
+  }
+
+  @Get('password/forgot')
+  forgotPassword(@Query() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
   }
 }
