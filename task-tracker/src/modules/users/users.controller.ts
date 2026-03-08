@@ -55,6 +55,12 @@ export class UsersController {
   }
 
   @UseGuards(AdminGuard)
+  @Patch(':id/unban')
+  async unban(@Param('id') userId: string) {
+    return this.usersService.unban(userId);
+  }
+
+  @UseGuards(AdminGuard)
   @Patch(':id/role')
   async changeRole(
     @Param('id') id: string,

@@ -204,4 +204,14 @@ export class UsersService {
       user: getSafeUser(user),
     };
   }
+
+  async unban(userId: string) {
+    const user = await this.findByIdOrThrow(userId);
+    await this.changeProperty(userId, 'unbanDate', null);
+
+    return {
+      status: ResStatuses.DONE,
+      user: getSafeUser(user),
+    };
+  }
 }
