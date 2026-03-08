@@ -274,4 +274,41 @@ export class AuthService {
       status: ResStatuses.DONE,
     };
   }
+
+  async verifyForReset({ email, otp }: VerifyDto) {
+    const cacheData =
+      await this.cacheService.getAndParse<IResetPasswordCacheData>(
+        `otp-to-reset:${email}`,
+      );
+    if (typeof cacheData == 'string') {
+      throw new InternalServerErrorException(CACHE_DATA_DAMAGED_ERROR);
+    }
+    if (!cacheData) {
+      throw new BadRequestException(OTP_NOT_REQUESTED_ERROR);
+    }
+    if (!(await this.hashService.compare(otp, cacheData.otp))) {
+      if (cacheData.attemptsCount > 6) {
+        await this.cacheService.delete(`otp-to-reset:${email}`);
+        throw new HttpException('', 429);
+      }
+      await this.cacheService.set(`otp-to-reset:${email}`, {
+        attemptsCount: cacheData.attemptsCount + 1,
+        otp: cacheData.otp,
+      });
+      throw new BadRequestException(WRONG_OTP_ERROR);
+    }
+
+    await this.cacheService.delete(`otp-to-reset:${email}`);
+
+    const reset_token = randomUUID();
+    await this.cacheService.set(
+      `reset_token:${email}`,
+      await this.hashService.hash(reset_token),
+    );
+
+    return {
+      status: ResStatuses.DONE,
+      reset_token,
+    };
+  }
 }

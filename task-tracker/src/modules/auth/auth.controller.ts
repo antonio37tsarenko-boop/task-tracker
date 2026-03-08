@@ -72,4 +72,9 @@ export class AuthController {
   forgotPassword(@Query() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
   }
+
+  @Patch('password/verify')
+  verifyForReset(@Body() dto: VerifyDto) {
+    return this.authService.verifyForReset(dto);
+  }
 }
