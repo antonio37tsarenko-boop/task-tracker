@@ -23,17 +23,24 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { Public } from '../../decorators/public.decorator';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Throttle({
+    default: { limit: 1, ttl: 60000 },
+  })
   @Public()
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
+  @Throttle({
+    default: { limit: 6, ttl: 60000 },
+  })
   @Public()
   @Post('verify')
   verify(@Body() dto: VerifyDto, @Res({ passthrough: true }) res: e.Response) {
@@ -71,18 +78,27 @@ export class AuthController {
     return this.authService.changePassword(dto, user.id);
   }
 
+  @Throttle({
+    default: { limit: 1, ttl: 60000 },
+  })
   @Public()
   @Get('password/forgot')
   forgotPassword(@Query() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
   }
 
+  @Throttle({
+    default: { limit: 6, ttl: 60000 },
+  })
   @Public()
   @Patch('password/verify')
   verifyForReset(@Body() dto: VerifyDto) {
     return this.authService.verifyForReset(dto);
   }
 
+  @Throttle({
+    default: { limit: 6, ttl: 60000 },
+  })
   @Public()
   @Patch('password/reset')
   resetPassword(@Body() dto: ResetPasswordDto) {

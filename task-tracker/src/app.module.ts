@@ -9,11 +9,11 @@ import { GetMailerConfig } from './configs/mailer.config';
 import { CacheModule } from './modules/cache/cache.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HashModule } from './modules/hash/hash.module';
-import { JwtModule } from '@nestjs/jwt';
-import { getJwtConfig } from './configs/jwt.config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './guards/jwt.guard';
 import { IsBannedGuard } from './guards/is-banned.guard';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { getThrottlerConfig } from './configs/throttler.config';
 
 @Module({
   imports: [
@@ -26,6 +26,11 @@ import { IsBannedGuard } from './guards/is-banned.guard';
     MailerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: GetMailerConfig,
+    }),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: getThrottlerConfig,
     }),
     CacheModule,
     AuthModule,
@@ -40,6 +45,10 @@ import { IsBannedGuard } from './guards/is-banned.guard';
     {
       provide: APP_GUARD,
       useClass: IsBannedGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
     AppService,
   ],
