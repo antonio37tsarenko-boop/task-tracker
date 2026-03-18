@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Param,
   Patch,
   Post,
   Query,
@@ -103,5 +104,10 @@ export class AuthController {
   @Patch('password/reset')
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
+  }
+
+  @Patch('email/request/:oldEmail')
+  async requestEmailChange(@Param('oldEmail') oldEmail: string) {
+    return this.authService.requestEmailChange(oldEmail);
   }
 }

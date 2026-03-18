@@ -136,7 +136,7 @@ export class AuthService {
     const payload: IJwtPayload = {
       email: user.email,
       id: user.id,
-      role: user.role,
+      role: user.role || undefined,
     };
     const access_token = await this.handleTokens(payload, user, res);
 
@@ -203,7 +203,7 @@ export class AuthService {
     const payload: IJwtPayload = {
       id: user.id,
       email: user.email,
-      role: user.role,
+      role: user.role || undefined,
     };
     const access_token = await this.handleTokens(payload, user, res);
 
@@ -255,9 +255,7 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
-    console.log('FORGOT PASSWORD FUNC IS WORKING');
     await this.usersService.findByEmailOrThrow(email);
-    console.log('USER IS FOUND');
     const otp = generateOtp();
 
     await this.mailService.sendMail({
@@ -336,4 +334,28 @@ export class AuthService {
       user: getSafeUser(user),
     };
   }
+
+  async requestEmailChange(oldEmail: string) {
+    await this.usersService.findByEmailOrThrow(oldEmail);
+    const otp = generateOtp();
+
+    await this.mailService.sendMail({
+      to: oldEmail,
+      text: getOtpText(otp),
+    });
+
+    const cacheData: IResetPasswordCacheData = {
+      attemptsCount: 0,
+      otp: await this.hashService.hash(otp),
+    };
+    await this.cacheService.set(`otp-to-change-email:${oldEmail}`, cacheData);
+
+    return {
+      status: ResStatuses.DONE,
+    };
+  }
+
+  async verifyForEmailChange(otp: string, oldEmail: string) {}
+
+  async changeEmail(oldEmail: string, newEmail: string) {}
 }

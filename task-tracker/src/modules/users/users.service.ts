@@ -124,7 +124,7 @@ export class UsersService {
     return { ...safeUser };
   }
 
-  async getAllUsers({ skip, take }: GetAllUsersDto, id: string) {
+  async getAllUsers({ skip, take }: GetAllUsersDto) {
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         skip,

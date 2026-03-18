@@ -19,6 +19,7 @@ import { ChangeRoleDto } from './dto/change-role.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { BanDto } from './dto/ban.dto';
 import { NO_BAN_TIME_ERROR } from './users.constants';
+import { JwtAuthGuard } from '../../guards/jwt.guard';
 
 @Controller('users')
 export class UsersController {
@@ -29,10 +30,10 @@ export class UsersController {
     return this.usersService.getMe(user.id);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @Get()
   async getAllUsers(@Query() dto: GetAllUsersDto, @User() user: IJwtPayload) {
-    return this.usersService.getAllUsers(dto, user.id);
+    return this.usersService.getAllUsers(dto);
   }
 
   @Delete('me')
