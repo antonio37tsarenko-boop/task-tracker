@@ -14,6 +14,9 @@ import { JwtAuthGuard } from './guards/jwt.guard';
 import { IsBannedGuard } from './guards/is-banned.guard';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { getThrottlerConfig } from './configs/throttler.config';
+import { BullModule } from '@nestjs/bullmq';
+import { BullMqConfig } from './configs/bull-mq.config';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
@@ -35,6 +38,12 @@ import { getThrottlerConfig } from './configs/throttler.config';
     CacheModule,
     AuthModule,
     HashModule,
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: BullMqConfig,
+    }),
+    MailModule,
   ],
   controllers: [AppController],
   providers: [

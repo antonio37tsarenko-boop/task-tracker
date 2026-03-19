@@ -1,8 +1,6 @@
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
-  HttpException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -10,7 +8,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { CacheService } from '../cache/cache.service';
-import { MailerService } from '@nestjs-modules/mailer';
 import { RegisterDto } from './dto/register.dto';
 import { generateOtp } from '../../utils/generate-otp.util';
 import { ResStatuses } from '../../common/enums/res-status.enum';
@@ -45,13 +42,14 @@ import { randomUUID } from 'crypto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { IChangeEmailCache } from './interfaces/change-email-cache.interface';
 import { RequestEmailChangeDto } from './dto/request-email-change.dto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
   logger: Logger = new Logger('AuthService');
   constructor(
     private readonly cacheService: CacheService,
-    private readonly mailService: MailerService,
+    private readonly mailService: MailService,
     private readonly usersService: UsersService,
     private readonly hashService: HashService,
     private readonly jwtService: JwtService,
