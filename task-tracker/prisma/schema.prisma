@@ -37,20 +37,20 @@ model User {
 }
 
 model Task {
-  id        String   @id() @default(uuid())
+  id        String       @id() @default(uuid())
   name      String
-  text      String   @default("")
-  status    String
-  group     Group    @relation(fields: [groupId], references: [id])
+  text      String       @default("")
+  status    TaskStatuses
+  group     Group        @relation(fields: [groupId], references: [id])
   groupId   String
-  createdAt DateTime @default(now())
+  createdAt DateTime     @default(now())
 
   @@map("tasks")
 }
 
 model Group {
-  id    String       @id() @default(uuid())
-  name  TaskStatuses
+  id    String @id() @default(uuid())
+  name  String
   tasks Task[]
 
   @@map("groups")
