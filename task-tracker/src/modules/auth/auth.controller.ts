@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  Param,
   Patch,
   Post,
   Query,
@@ -19,12 +18,13 @@ import { LoginDto } from './dto/login.dto';
 import { JwtRefreshGuard } from '../../guards/jwt-refresh.guard';
 import { IJwtPayload } from '../../common/interfaces/jwt-payload.interface';
 import { User } from '../../decorators/user.decorator';
-import { JwtAuthGuard } from '../../guards/jwt.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { Public } from '../../decorators/public.decorator';
 import { Throttle } from '@nestjs/throttler';
+import { RequestEmailChangeDto } from './dto/request-email-change.dto';
+import { ChangeEmailDto } from './dto/change-email.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -39,9 +39,6 @@ export class AuthController {
     return this.authService.register(dto);
   }
 
-  @Throttle({
-    default: { limit: 6, ttl: 60000 },
-  })
   @Public()
   @Post('verify')
   verify(@Body() dto: VerifyDto, @Res({ passthrough: true }) res: e.Response) {
@@ -88,31 +85,38 @@ export class AuthController {
     return this.authService.forgotPassword(dto.email);
   }
 
-  @Throttle({
-    default: { limit: 6, ttl: 60000 },
-  })
   @Public()
   @Patch('password/verify')
   verifyForReset(@Body() dto: VerifyDto) {
     return this.authService.verifyForReset(dto);
   }
 
-  @Throttle({
-    default: { limit: 6, ttl: 60000 },
-  })
   @Public()
   @Patch('password/reset')
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
   }
 
-  @Patch('email/change/request/:oldEmail')
-  async requestEmailChange(@Param('oldEmail') oldEmail: string) {
-    return this.authService.requestEmailChange(oldEmail);
+  @Throttle({
+    default: {
+      ttl: 1000 * 60,
+      limit: 1,
+    },
+  })
+  @Patch('email/change/request')
+  async requestEmailChange(
+    @Body() dto: RequestEmailChangeDto,
+    @User() user: IJwtPayload,
+  ) {
+    return this.authService.requestEmailChange(user.email, dto);
   }
 
   @Patch('email/change/verify')
-  async verifyForEmailChange(@Body() dto: VerifyDto) {
-    return this.authService.verifyForEmailChange(dto);
+  async changeEmail(
+    @Body() { otp }: ChangeEmailDto,
+    @User() user: IJwtPayload,
+    @Res({ passthrough: true }) res: e.Response,
+  ) {
+    return this.authService.changeEmail(user, otp, res);
   }
 }

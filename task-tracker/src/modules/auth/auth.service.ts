@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  ConflictException,
+  ForbiddenException,
   HttpException,
   Injectable,
   InternalServerErrorException,
@@ -41,6 +43,8 @@ import { getSafeUser } from '../../utils/get-safe-user.util';
 import { IResetPasswordCacheData } from './interfaces/reset-password-cache-data.interface';
 import { randomUUID } from 'crypto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { IChangeEmailCache } from './interfaces/change-email-cache.interface';
+import { RequestEmailChangeDto } from './dto/request-email-change.dto';
 
 @Injectable()
 export class AuthService {
@@ -224,7 +228,6 @@ export class AuthService {
       text: getOtpText(otp),
     });
     const cacheData: IResetPasswordCacheData = {
-      attemptsCount: 0,
       otp: await this.hashService.hash(otp),
     };
     await this.cacheService.set(`otp-to-reset:${email}`, cacheData);
@@ -246,14 +249,6 @@ export class AuthService {
       throw new BadRequestException(OTP_NOT_REQUESTED_ERROR);
     }
     if (!(await this.hashService.compare(otp, cacheData.otp))) {
-      if (cacheData.attemptsCount > 6) {
-        await this.cacheService.delete(`otp-to-reset:${email}`);
-        throw new HttpException('', 429);
-      }
-      await this.cacheService.set(`otp-to-reset:${email}`, {
-        attemptsCount: cacheData.attemptsCount + 1,
-        otp: cacheData.otp,
-      });
       throw new BadRequestException(WRONG_OTP_ERROR);
     }
 
@@ -296,18 +291,29 @@ export class AuthService {
     };
   }
 
-  async requestEmailChange(oldEmail: string) {
-    await this.usersService.findByEmailOrThrow(oldEmail);
+  async requestEmailChange(
+    oldEmail: string,
+    { newEmail, password }: RequestEmailChangeDto,
+  ) {
+    const user = await this.usersService.findByEmailOrThrow(oldEmail);
+    if (!(await this.hashService.compare(password, user.hashedPassword))) {
+      throw new UnauthorizedException(WRONG_PASSWORD_ERROR);
+    }
+
+    if (await this.usersService.findByEmail(newEmail)) {
+      throw new ConflictException(USER_EXISTS_ERROR);
+    }
+
     const otp = generateOtp();
 
     await this.mailService.sendMail({
-      to: oldEmail,
+      to: newEmail,
       text: getOtpText(otp),
     });
 
-    const cacheData: IResetPasswordCacheData = {
-      attemptsCount: 0,
+    const cacheData: IChangeEmailCache = {
       otp: await this.hashService.hash(otp),
+      newEmail,
     };
     await this.cacheService.set(`otp-to-change-email:${oldEmail}`, cacheData);
 
@@ -316,11 +322,11 @@ export class AuthService {
     };
   }
 
-  async verifyForEmailChange({ email, otp }: VerifyDto) {
-    const cacheData =
-      await this.cacheService.getAndParse<IResetPasswordCacheData>(
-        `otp-to-change-email:${email}`,
-      );
+  async changeEmail(payload: IJwtPayload, otp: string, res: e.Response) {
+    const oldEmail = payload.email;
+    const cacheData = await this.cacheService.getAndParse<IChangeEmailCache>(
+      `otp-to-change-email:${oldEmail}`,
+    );
     if (typeof cacheData == 'string') {
       throw new InternalServerErrorException(CACHE_DATA_DAMAGED_ERROR);
     }
@@ -328,32 +334,35 @@ export class AuthService {
       throw new BadRequestException(OTP_NOT_REQUESTED_ERROR);
     }
     if (!(await this.hashService.compare(otp, cacheData.otp))) {
-      if (cacheData.attemptsCount > 6) {
-        await this.cacheService.delete(`otp-to-change-email:${email}`);
-        throw new HttpException('', 429);
-      }
-      await this.cacheService.set(`otp-to-change-email:${email}`, {
-        attemptsCount: cacheData.attemptsCount + 1,
-        otp: cacheData.otp,
-      });
       throw new BadRequestException(WRONG_OTP_ERROR);
     }
 
-    await this.cacheService.delete(`otp-to-change-email:${email}`);
+    await this.cacheService.delete(`otp-to-change-email:${oldEmail}`);
 
-    const reset_token = randomUUID();
-    await this.cacheService.set(
-      `reset_email_token:${email}`,
-      await this.hashService.hash(reset_token),
+    const user = await this.usersService.findByEmailOrThrow(oldEmail);
+    await this.usersService.changeProperty(
+      user.id,
+      'email',
+      cacheData.newEmail,
+    );
+
+    await this.mailService.sendMail({
+      to: oldEmail,
+      text: `your email is changed to ${cacheData.newEmail}`,
+    });
+
+    const access_token = await this.handleTokens(
+      { ...payload, email: cacheData.newEmail },
+      { ...user, email: cacheData.newEmail },
+      res,
     );
 
     return {
       status: ResStatuses.DONE,
-      reset_token,
+      user: getSafeUser(user),
+      access_token,
     };
   }
-
-  async changeEmail(oldEmail: string, newEmail: string) {}
 
   private async getTokens(payload: IJwtPayload) {
     const access_token = await this.jwtService.signAsync(payload, {
