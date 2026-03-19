@@ -106,8 +106,13 @@ export class AuthController {
     return this.authService.resetPassword(dto);
   }
 
-  @Patch('email/request/:oldEmail')
+  @Patch('email/change/request/:oldEmail')
   async requestEmailChange(@Param('oldEmail') oldEmail: string) {
     return this.authService.requestEmailChange(oldEmail);
+  }
+
+  @Patch('email/change/verify')
+  async verifyForEmailChange(@Body() dto: VerifyDto) {
+    return this.authService.verifyForEmailChange(dto);
   }
 }

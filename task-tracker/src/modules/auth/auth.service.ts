@@ -147,45 +147,6 @@ export class AuthService {
     };
   }
 
-  private async getTokens(payload: IJwtPayload) {
-    const access_token = await this.jwtService.signAsync(payload, {
-      secret: this.configService.getOrThrow('JWT_ACCESS_SECRET'),
-      expiresIn: '15m',
-    });
-    const refresh_token = await this.jwtService.signAsync(
-      { id: payload.id },
-      {
-        secret: this.configService.getOrThrow('JWT_REFRESH_SECRET'),
-        expiresIn: '7d',
-      },
-    );
-    return {
-      access_token,
-      refresh_token,
-    };
-  }
-
-  private async handleTokens(
-    payload: IJwtPayload,
-    user: User,
-    res: e.Response,
-  ) {
-    const { access_token, refresh_token } = await this.getTokens(payload);
-    await this.cacheService.set(
-      `refresh:${user.id}`,
-      await this.hashService.hash(refresh_token),
-      7 * 24 * 60 * 60,
-    );
-
-    res.cookie('refresh_token', refresh_token, {
-      httpOnly: true,
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    return access_token;
-  }
-
   async refresh(userId: string, refresh: string, res: e.Response) {
     const correctRefresh = await this.cacheService.get(`refresh:${userId}`);
     if (!correctRefresh) {
@@ -355,7 +316,81 @@ export class AuthService {
     };
   }
 
-  async verifyForEmailChange(otp: string, oldEmail: string) {}
+  async verifyForEmailChange({ email, otp }: VerifyDto) {
+    const cacheData =
+      await this.cacheService.getAndParse<IResetPasswordCacheData>(
+        `otp-to-change-email:${email}`,
+      );
+    if (typeof cacheData == 'string') {
+      throw new InternalServerErrorException(CACHE_DATA_DAMAGED_ERROR);
+    }
+    if (!cacheData) {
+      throw new BadRequestException(OTP_NOT_REQUESTED_ERROR);
+    }
+    if (!(await this.hashService.compare(otp, cacheData.otp))) {
+      if (cacheData.attemptsCount > 6) {
+        await this.cacheService.delete(`otp-to-change-email:${email}`);
+        throw new HttpException('', 429);
+      }
+      await this.cacheService.set(`otp-to-change-email:${email}`, {
+        attemptsCount: cacheData.attemptsCount + 1,
+        otp: cacheData.otp,
+      });
+      throw new BadRequestException(WRONG_OTP_ERROR);
+    }
+
+    await this.cacheService.delete(`otp-to-change-email:${email}`);
+
+    const reset_token = randomUUID();
+    await this.cacheService.set(
+      `reset_email_token:${email}`,
+      await this.hashService.hash(reset_token),
+    );
+
+    return {
+      status: ResStatuses.DONE,
+      reset_token,
+    };
+  }
 
   async changeEmail(oldEmail: string, newEmail: string) {}
+
+  private async getTokens(payload: IJwtPayload) {
+    const access_token = await this.jwtService.signAsync(payload, {
+      secret: this.configService.getOrThrow('JWT_ACCESS_SECRET'),
+      expiresIn: '15m',
+    });
+    const refresh_token = await this.jwtService.signAsync(
+      { id: payload.id },
+      {
+        secret: this.configService.getOrThrow('JWT_REFRESH_SECRET'),
+        expiresIn: '7d',
+      },
+    );
+    return {
+      access_token,
+      refresh_token,
+    };
+  }
+
+  private async handleTokens(
+    payload: IJwtPayload,
+    user: User,
+    res: e.Response,
+  ) {
+    const { access_token, refresh_token } = await this.getTokens(payload);
+    await this.cacheService.set(
+      `refresh:${user.id}`,
+      await this.hashService.hash(refresh_token),
+      7 * 24 * 60 * 60,
+    );
+
+    res.cookie('refresh_token', refresh_token, {
+      httpOnly: true,
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return access_token;
+  }
 }
