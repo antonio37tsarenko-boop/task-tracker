@@ -1,6 +1,10 @@
-import { Injectable, Logger, OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
-import {PrismaClient} from '@prisma/client'
-
+import {
+  Injectable,
+  Logger,
+  OnApplicationShutdown,
+  OnModuleInit,
+} from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class PrismaService
@@ -16,6 +20,13 @@ export class PrismaService
     this.$connect();
   }
   onApplicationShutdown(signal?: string): any {
-    this.logger.log(`Signal ${signal} received, closing connection with database...`)
+    this.logger.log(
+      `Signal ${signal} received, closing connection with database...`,
+    );
+    this.group.findMany({
+      where: {
+        id: '1',
+      },
+    });
   }
 }

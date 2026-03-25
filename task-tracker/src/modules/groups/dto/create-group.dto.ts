@@ -1,7 +1,7 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class ChangeEmailDto {
+export class CreateGroupDto {
   @IsString()
   @IsNotEmpty()
-  otp: string;
+  name: string;
 }

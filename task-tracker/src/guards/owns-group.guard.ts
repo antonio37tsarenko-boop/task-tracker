@@ -1,9 +1,17 @@
-import { CanActivate, ExecutionContext } from '@nestjs/common';
+import {
+  BadRequestException,
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../modules/prisma/prisma.service';
 import e from 'express';
 
 // requires column "groupId" in body
+@Injectable()
 export class OwnsGroupGuard implements CanActivate {
+  logger: Logger = new Logger('OwnsGroupGuard');
   constructor(private readonly prisma: PrismaService) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: e.Request = context.switchToHttp().getRequest();
@@ -12,8 +20,9 @@ export class OwnsGroupGuard implements CanActivate {
 
     const groupId: string = request.body.groupId;
     if (!groupId) {
-      return false;
+      throw new BadRequestException('groupId must be a string');
     }
+
     const group = await this.prisma.group.findFirst({
       where: {
         userId: userIdFromReq,

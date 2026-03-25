@@ -17,6 +17,8 @@ import { getThrottlerConfig } from './configs/throttler.config';
 import { BullModule } from '@nestjs/bullmq';
 import { BullMqConfig } from './configs/bull-mq.config';
 import { MailModule } from './modules/mail/mail.module';
+import { TasksModule } from './modules/tasks/tasks.module';
+import { GroupsModule } from './modules/groups/groups.module';
 
 @Module({
   imports: [
@@ -44,6 +46,8 @@ import { MailModule } from './modules/mail/mail.module';
       useFactory: BullMqConfig,
     }),
     MailModule,
+    TasksModule,
+    GroupsModule,
   ],
   controllers: [AppController],
   providers: [

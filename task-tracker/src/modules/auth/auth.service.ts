@@ -87,7 +87,7 @@ export class AuthService {
         email,
         name,
       },
-      status: ResStatuses.DONE,
+      status: ResStatuses.RUNNING,
     };
   }
 
