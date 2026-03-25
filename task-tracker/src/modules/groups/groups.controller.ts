@@ -36,9 +36,14 @@ export class GroupsController {
     return this.groupsService.changeGroupName(dto);
   }
 
-  @Get()
+  @Get('info')
   @UseGuards(OwnsGroupGuard)
   getGroupInfo(@Body() dto: CheckGroupOwnershipDto) {
     return this.groupsService.getGroupInfo(dto);
+  }
+
+  @Get()
+  getUserGroups(@User() user: IJwtPayload) {
+    return this.groupsService.getUserGroups(user);
   }
 }

@@ -12,7 +12,6 @@ import { CheckGroupOwnershipDto } from '../../common/dto/check-group-ownership.d
 import { ChangeGroupNameDto } from './dto/change-group-name.dto';
 import { ResStatuses } from '../../common/enums/res-status.enum';
 import { Group, Prisma } from '@prisma/client';
-import { multicast } from 'rxjs';
 
 @Injectable()
 export class GroupsService {
@@ -120,5 +119,23 @@ export class GroupsService {
       throw new NotFoundException(GROUP_NOT_EXISTS_ERROR);
     }
     return group;
+  }
+
+  async getUserGroups({ id }: IJwtPayload) {
+    const groups = await this.prisma.group.findMany({
+      where: {
+        userId: id,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    return {
+      groups,
+      status: ResStatuses.DONE,
+      userId: id,
+    };
   }
 }
