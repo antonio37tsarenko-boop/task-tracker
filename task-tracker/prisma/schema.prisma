@@ -32,6 +32,7 @@ model User {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt()
   unbanDate      DateTime?
+  groups         Group[]
 
   @@map("users")
 }
@@ -41,7 +42,7 @@ model Task {
   name      String
   text      String       @default("")
   status    TaskStatuses
-  group     Group        @relation(fields: [groupId], references: [id])
+  group     Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
   groupId   String
   createdAt DateTime     @default(now())
 
@@ -49,9 +50,11 @@ model Task {
 }
 
 model Group {
-  id    String @id() @default(uuid())
-  name  String
-  tasks Task[]
+  id     String @id() @default(uuid())
+  name   String
+  tasks  Task[]
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
 
   @@map("groups")
 }
