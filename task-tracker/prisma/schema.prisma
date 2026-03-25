@@ -41,7 +41,7 @@ model Task {
   id        String       @id() @default(uuid())
   name      String
   text      String       @default("")
-  status    TaskStatuses
+  status    TaskStatuses @default(NOT_COMPLETED)
   group     Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
   groupId   String
   createdAt DateTime     @default(now())
@@ -50,11 +50,12 @@ model Task {
 }
 
 model Group {
-  id     String @id() @default(uuid())
-  name   String
-  tasks  Task[]
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
+  id        String   @id() @default(uuid())
+  name      String
+  tasks     Task[]
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
 
   @@unique([userId, name])
   @@map("groups")
