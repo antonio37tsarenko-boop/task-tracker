@@ -24,21 +24,25 @@ export class TasksController {
     return this.tasksService.createTask(dto);
   }
 
+  @UseGuards(OwnsGroupGuard)
   @Patch('text')
   async updateTaskText(@Body() dto: UpdateTaskTextDto) {
     return this.tasksService.updateTaskText(dto);
   }
 
+  @UseGuards(OwnsGroupGuard)
   @Patch('name')
   async updateTaskName(@Body() dto: UpdateTaskNameDto) {
     return this.tasksService.updateTaskName(dto);
   }
 
+  @UseGuards(OwnsGroupGuard)
   @Patch('status')
   async changeTaskStatus(@Body() dto: ChangeTaskStatusDto) {
     return this.tasksService.changeTaskStatus(dto);
   }
 
+  @UseGuards(OwnsGroupGuard)
   @Delete()
   async deleteTask(@Body() dto: BaseTaskDto) {
     return this.tasksService.deleteTask(dto);
