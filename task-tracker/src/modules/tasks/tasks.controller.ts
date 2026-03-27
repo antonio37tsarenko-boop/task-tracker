@@ -28,4 +28,9 @@ export class TasksController {
   async updateTaskText(@Body() dto: UpdateTaskTextDto) {
     return this.tasksService.updateTaskText(dto);
   }
+
+  @Patch('name')
+  async updateTaskName(@Body() dto: UpdateTaskNameDto) {
+    return this.tasksService.updateTaskName(dto);
+  }
 }

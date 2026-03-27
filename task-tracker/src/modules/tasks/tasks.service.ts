@@ -94,4 +94,17 @@ export class TasksService {
       throw e;
     }
   }
+
+  async updateTaskName({ taskId, name }: UpdateTaskNameDto) {
+    const { createdAt, ...cleanTask } = await this.updateTaskPropertyOrThrow(
+      taskId,
+      'text',
+      name,
+    );
+
+    return {
+      task: cleanTask,
+      status: ResStatuses.DONE,
+    };
+  }
 }
