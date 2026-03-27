@@ -46,6 +46,7 @@ model Task {
   groupId   String
   createdAt DateTime     @default(now())
 
+  @@unique([groupId, name])
   @@map("tasks")
 }
 
