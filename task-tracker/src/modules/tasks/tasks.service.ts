@@ -49,4 +49,49 @@ export class TasksService {
       status: ResStatuses.DONE,
     };
   }
+
+  async updateTaskText({ taskId, text }: UpdateTaskTextDto) {
+    const { createdAt, ...cleanTask } = await this.updateTaskPropertyOrThrow(
+      taskId,
+      'text',
+      text,
+    );
+
+    return {
+      task: cleanTask,
+      status: ResStatuses.DONE,
+    };
+  }
+
+  updateTaskProperty<T extends Prisma.TaskScalarFieldEnum>(
+    id: string,
+    field: T,
+    value: Task[T],
+  ) {
+    return this.prisma.task.update({
+      where: {
+        id,
+      },
+      data: {
+        [field]: value,
+      },
+    });
+  }
+
+  updateTaskPropertyOrThrow<T extends Prisma.TaskScalarFieldEnum>(
+    id: string,
+    field: T,
+    value: Task[T],
+  ) {
+    try {
+      return this.updateTaskProperty(id, field, value);
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
+        if (e.code == 'P2025') {
+          throw new NotFoundException(TASK_NOT_EXISTS_ERROR);
+        }
+      }
+      throw e;
+    }
+  }
 }

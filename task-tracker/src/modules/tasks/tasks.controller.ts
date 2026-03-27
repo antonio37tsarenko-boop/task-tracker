@@ -23,4 +23,9 @@ export class TasksController {
   createTask(@Body() dto: CreateTaskDto) {
     return this.tasksService.createTask(dto);
   }
+
+  @Patch('text')
+  async updateTaskText(@Body() dto: UpdateTaskTextDto) {
+    return this.tasksService.updateTaskText(dto);
+  }
 }
