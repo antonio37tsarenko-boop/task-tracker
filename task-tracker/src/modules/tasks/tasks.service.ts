@@ -120,4 +120,17 @@ export class TasksService {
       status: ResStatuses.DONE,
     };
   }
+
+  async deleteTask({ taskId }: BaseTaskDto) {
+    const { groupId } = await this.prisma.task.delete({
+      where: {
+        id: taskId,
+      },
+    });
+
+    return {
+      groupId,
+      status: ResStatuses.DONE,
+    };
+  }
 }

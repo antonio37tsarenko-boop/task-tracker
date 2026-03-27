@@ -38,4 +38,9 @@ export class TasksController {
   async changeTaskStatus(@Body() dto: ChangeTaskStatusDto) {
     return this.tasksService.changeTaskStatus(dto);
   }
+
+  @Delete()
+  async deleteTask(@Body() dto: BaseTaskDto) {
+    return this.tasksService.deleteTask(dto);
+  }
 }
