@@ -107,4 +107,17 @@ export class TasksService {
       status: ResStatuses.DONE,
     };
   }
+
+  async changeTaskStatus({ taskId, status }: ChangeTaskStatusDto) {
+    const { createdAt, ...task } = await this.updateTaskPropertyOrThrow(
+      taskId,
+      'status',
+      status,
+    );
+
+    return {
+      task,
+      status: ResStatuses.DONE,
+    };
+  }
 }

@@ -33,4 +33,9 @@ export class TasksController {
   async updateTaskName(@Body() dto: UpdateTaskNameDto) {
     return this.tasksService.updateTaskName(dto);
   }
+
+  @Patch('status')
+  async changeTaskStatus(@Body() dto: ChangeTaskStatusDto) {
+    return this.tasksService.changeTaskStatus(dto);
+  }
 }
